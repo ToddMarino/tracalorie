@@ -30,7 +30,15 @@ class CalorieTracker {
   // Private Methods
   _displayCaloriesTotal() {
     const totalCaloriesEl = document.querySelector('#calories-total');
+    const gainLoss = document.querySelector('#gain-loss');
+
     totalCaloriesEl.innerHTML = this._totalCalories;
+
+    if (this._totalCalories < 0) {
+      gainLoss.innerHTML = 'Loss';
+    } else {
+      gainLoss.innerHTML = 'Gain';
+    }
   }
 
   _displayCalorieLimit() {
@@ -99,9 +107,8 @@ class CalorieTracker {
     this._displayCaloriesRemaining();
     this._displayCaloriesProgress();
   }
-
-  // CalorieTracker class ENDS
 }
+// CalorieTracker class END
 
 class Meal {
   constructor(name, calories) {
@@ -119,18 +126,43 @@ class Workout {
   }
 }
 
-const tracker = new CalorieTracker();
+class App {
+  constructor() {
+    this._tracker = new CalorieTracker();
 
-const breakfast = new Meal('Breakfast', 400);
-tracker.addMeal(breakfast);
-const lunch = new Meal('Lunch', 2000);
-tracker.addMeal(lunch);
+    document
+      .querySelector('#meal-form')
+      .addEventListener('submit', this._newItem.bind(this, 'meal'));
 
-const run = new Workout('Morning Run', 320);
-tracker.addWorkout(run);
-const walk = new Workout('Morning Walk', 80);
-tracker.addWorkout(walk);
+    document
+      .querySelector('#workout-form')
+      .addEventListener('submit', this._newItem.bind(this, 'workout'));
+  }
 
-console.log(tracker._meals);
-console.log(tracker._workouts);
-console.log(tracker._totalCalories);
+  _newItem(type, e) {
+    e.preventDefault();
+
+    const name = document.querySelector(`#${type}-name`);
+    const calories = document.querySelector(`#${type}-calories`);
+
+    if (name.value === '' || calories.value === '') {
+      alert('Please complete both fields.');
+    }
+
+    if (type === 'meal') {
+      const meal = new Meal(name.value, parseInt(calories.value));
+      this._tracker.addMeal(meal);
+    } else {
+      const workout = new Workout(name.value, parseInt(calories.value));
+      this._tracker.addWorkout(workout);
+    }
+
+    name.value = '';
+    calories.value = '';
+
+    const collapse = document.querySelector(`#collapse-${type}`);
+    const bsCollapse = new bootstrap.Collapse(collapse, { toggle: true });
+  }
+} // App Class END
+
+const app = new App();
