@@ -152,9 +152,11 @@ class App {
     if (type === 'meal') {
       const meal = new Meal(name.value, parseInt(calories.value));
       this._tracker.addMeal(meal);
+      this._displayNewItem(type, meal);
     } else {
       const workout = new Workout(name.value, parseInt(calories.value));
       this._tracker.addWorkout(workout);
+      this._displayNewItem(type, workout);
     }
 
     name.value = '';
@@ -162,6 +164,33 @@ class App {
 
     const collapse = document.querySelector(`#collapse-${type}`);
     const bsCollapse = new bootstrap.Collapse(collapse, { toggle: true });
+  }
+
+  _displayNewItem(type, item) {
+    const { name, calories, id } = item;
+
+    const items = document.querySelector(`#${type}-items`);
+    const div = document.createElement('div');
+    div.classList.add('card', 'my-2');
+    div.setAttribute('data-id', `${id}.id`);
+    div.innerHTML = `
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between">
+          <h4 class="mx-1">${name}</h4>
+          <div
+            class="fs-1 bg-${
+              type === 'meal' ? 'primary' : 'secondary'
+            } text-white text-center rounded-2 px-2 px-sm-5"
+          >
+            ${calories}
+          </div>
+          <button class="delete btn btn-danger btn-sm mx-2">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+      `;
+    items.appendChild(div);
   }
 } // App Class END
 
