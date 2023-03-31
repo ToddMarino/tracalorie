@@ -27,10 +27,37 @@ class CalorieTracker {
     this._render();
   }
 
+  removeMeal(id) {
+    const index = this._meals.findIndex((meal) => meal.id === id);
+    if (index !== -1) {
+      const meal = this._meals[index];
+      this._totalCalories -= meal.calories;
+      this._meals.splice(index, 1);
+      this._render();
+    }
+  }
+
+  removeWorkout(id) {
+    const index = this._workouts.findIndex((workout) => workout.id === id);
+    if (index !== -1) {
+      const workout = this._workouts[index];
+      this._totalCalories += workout.calories;
+      this._workouts.splice(index, 1);
+      this._render();
+    }
+  }
+
+  reset() {
+    this._totalCalories = 0;
+    this._meals = [];
+    this._workouts = [];
+    this._render();
+  }
+
   // Private Methods
   _displayCaloriesTotal() {
-    const totalCaloriesEl = document.querySelector('#calories-total');
-    const gainLoss = document.querySelector('#gain-loss');
+    const totalCaloriesEl = document.getElementById('calories-total');
+    const gainLoss = document.getElementById('gain-loss');
 
     totalCaloriesEl.innerHTML = this._totalCalories;
 
@@ -42,12 +69,12 @@ class CalorieTracker {
   }
 
   _displayCalorieLimit() {
-    const caloriesLimitEl = document.querySelector('#calories-limit');
+    const caloriesLimitEl = document.getElementById('calories-limit');
     caloriesLimitEl.innerHTML = this._calorieLimit;
   }
 
   _displayCaloriesConsumed() {
-    const caloriesConsumedEl = document.querySelector('#calories-consumed');
+    const caloriesConsumedEl = document.getElementById('calories-consumed');
 
     const consumed = this._meals.reduce(
       (total, meal) => total + meal.calories,
@@ -57,7 +84,7 @@ class CalorieTracker {
   }
 
   _displayCaloriesBurned() {
-    const caloriesBurnedEl = document.querySelector('#calories-burned');
+    const caloriesBurnedEl = document.getElementById('calories-burned');
 
     const burned = this._workouts.reduce(
       (total, workout) => total + workout.calories,
@@ -67,8 +94,8 @@ class CalorieTracker {
   }
 
   _displayCaloriesRemaining() {
-    const caloriesRemainingEl = document.querySelector('#calories-remaining');
-    const progressEl = document.querySelector('#calorie-progress');
+    const caloriesRemainingEl = document.getElementById('calories-remaining');
+    const progressEl = document.getElementById('calorie-progress');
 
     const remaining = this._calorieLimit - this._totalCalories;
 
@@ -94,7 +121,7 @@ class CalorieTracker {
   }
 
   _displayCaloriesProgress() {
-    const progressEl = document.querySelector('#calorie-progress');
+    const progressEl = document.getElementById('calorie-progress');
     const percentage = (this._totalCalories / this._calorieLimit) * 100;
     const width = Math.min(percentage, 100);
     progressEl.style.width = `${width}%`;
@@ -131,12 +158,32 @@ class App {
     this._tracker = new CalorieTracker();
 
     document
-      .querySelector('#meal-form')
+      .getElementById('meal-form')
       .addEventListener('submit', this._newItem.bind(this, 'meal'));
 
     document
-      .querySelector('#workout-form')
+      .getElementById('workout-form')
       .addEventListener('submit', this._newItem.bind(this, 'workout'));
+
+    document
+      .getElementById('meal-items')
+      .addEventListener('click', this._removeItem.bind(this, 'meal'));
+
+    document
+      .getElementById('workout-items')
+      .addEventListener('click', this._removeItem.bind(this, 'workout'));
+
+    document
+      .getElementById('filter-meals')
+      .addEventListener('keyup', this._filterItems.bind(this, 'meal'));
+
+    document
+      .getElementById('filter-workouts')
+      .addEventListener('keyup', this._filterItems.bind(this, 'workout'));
+
+    document
+      .getElementById('reset')
+      .addEventListener('click', this._reset.bind(this));
   }
 
   _newItem(type, e) {
@@ -145,8 +192,18 @@ class App {
     const name = document.querySelector(`#${type}-name`);
     const calories = document.querySelector(`#${type}-calories`);
 
-    if (name.value === '' || calories.value === '') {
+    if (name.value === '' && calories.value === '') {
       alert('Please complete both fields.');
+      name.focus();
+      return;
+    } else if (name.value === '') {
+      alert('Please enter the item name');
+      name.focus();
+      return;
+    } else if (calories.value === '') {
+      alert('Please enter a calorie amount');
+      calories.focus();
+      return;
     }
 
     if (type === 'meal') {
@@ -172,7 +229,7 @@ class App {
     const items = document.querySelector(`#${type}-items`);
     const div = document.createElement('div');
     div.classList.add('card', 'my-2');
-    div.setAttribute('data-id', `${id}.id`);
+    div.setAttribute('data-id', `${id}`);
     div.innerHTML = `
       <div class="card-body">
         <div class="d-flex align-items-center justify-content-between">
@@ -191,6 +248,45 @@ class App {
       </div>
       `;
     items.appendChild(div);
+  }
+
+  _removeItem(type, e) {
+    if (
+      e.target.classList.contains('delete') ||
+      e.target.classList.contains('fa-xmark')
+    ) {
+      if (confirm('Are you sure?')) {
+        const id = e.target.closest('.card').getAttribute('data-id');
+
+        type === 'meal'
+          ? this._tracker.removeMeal(id)
+          : this._tracker.removeWorkout(id);
+
+        e.target.closest('.card').remove();
+      }
+    }
+  }
+
+  _filterItems(type, e) {
+    const text = e.target.value;
+    const cards = document.querySelectorAll(`#${type}-items .card`);
+    cards.forEach((item) => {
+      const name = item.firstElementChild.firstElementChild.textContent;
+
+      if (name.toLowerCase().indexOf(text) !== -1) {
+        item.style.display = 'block';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  }
+
+  _reset() {
+    this._tracker.reset();
+    document.getElementById('meal-items').innerHTML = '';
+    document.getElementById('workout-items').innerHTML = '';
+    document.getElementById('filter-meals').value = '';
+    document.getElementById('filter-workouts').value = '';
   }
 } // App Class END
 
