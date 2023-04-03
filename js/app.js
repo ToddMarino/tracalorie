@@ -20,6 +20,7 @@ class CalorieTracker {
     this._totalCalories += meal.calories;
     Storage.updateTotalCalories(this._totalCalories);
     Storage.saveMeal(meal);
+    this._displayNewItem('meal', meal);
     this._render();
   }
 
@@ -64,6 +65,10 @@ class CalorieTracker {
     Storage.setCalorieLimit(calorieLimit);
     this._displayCalorieLimit();
     this._render();
+  }
+
+  loadItems() {
+    this._meals.forEach((meal) => this._displayNewItem('meal', meal));
   }
 
   // Private Methods
@@ -137,6 +142,33 @@ class CalorieTracker {
     const percentage = (this._totalCalories / this._calorieLimit) * 100;
     const width = Math.min(percentage, 100);
     progressEl.style.width = `${width}%`;
+  }
+
+  _displayNewItem(type, item) {
+    const { name, calories, id } = item;
+
+    const items = document.querySelector(`#${type}-items`);
+    const div = document.createElement('div');
+    div.classList.add('card', 'my-2');
+    div.setAttribute('data-id', `${id}`);
+    div.innerHTML = `
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between">
+          <h4 class="mx-1">${name}</h4>
+          <div
+            class="fs-1 bg-${
+              type === 'meal' ? 'primary' : 'secondary'
+            } text-white text-center rounded-2 px-2 px-sm-5"
+          >
+            ${calories}
+          </div>
+          <button class="delete btn btn-danger btn-sm mx-2">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+      `;
+    items.appendChild(div);
   }
 
   _render() {
@@ -215,7 +247,10 @@ class Storage {
 class App {
   constructor() {
     this._tracker = new CalorieTracker();
-
+    this._loadEventListeners();
+    this._tracker.loadItems();
+  }
+  _loadEventListeners() {
     document
       .getElementById('meal-form')
       .addEventListener('submit', this._newItem.bind(this, 'meal'));
@@ -272,45 +307,17 @@ class App {
     if (type === 'meal') {
       const meal = new Meal(name.value, parseInt(calories.value));
       this._tracker.addMeal(meal);
-      this._displayNewItem(type, meal);
     } else {
       const workout = new Workout(name.value, parseInt(calories.value));
       this._tracker.addWorkout(workout);
-      this._displayNewItem(type, workout);
     }
 
     name.value = '';
     calories.value = '';
 
+    console.log(`before collapse ${type}`);
     const collapse = document.querySelector(`#collapse-${type}`);
     const bsCollapse = new bootstrap.Collapse(collapse, { toggle: true });
-  }
-
-  _displayNewItem(type, item) {
-    const { name, calories, id } = item;
-
-    const items = document.querySelector(`#${type}-items`);
-    const div = document.createElement('div');
-    div.classList.add('card', 'my-2');
-    div.setAttribute('data-id', `${id}`);
-    div.innerHTML = `
-      <div class="card-body">
-        <div class="d-flex align-items-center justify-content-between">
-          <h4 class="mx-1">${name}</h4>
-          <div
-            class="fs-1 bg-${
-              type === 'meal' ? 'primary' : 'secondary'
-            } text-white text-center rounded-2 px-2 px-sm-5"
-          >
-            ${calories}
-          </div>
-          <button class="delete btn btn-danger btn-sm mx-2">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-      </div>
-      `;
-    items.appendChild(div);
   }
 
   _removeItem(type, e) {
